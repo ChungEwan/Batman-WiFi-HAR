@@ -45,12 +45,14 @@ class LoginFrame(tk.Frame):
         # Image obtained from:
         # https://www.veryicon.com/icons/healthcate-medical/medical-icon-two-color-icon/ico-health-clinic.html
         # set the image path to variable
-        image_path = "./images/changed.png"
-        # create a PhotoImage object from the image path, set the PhotoImage object to a class attribute
-        self.login_logo = tk.PhotoImage(file=image_path)
+        # image_path = "./images/changed.png"
+        # # create a PhotoImage object from the image path, set the PhotoImage object to a class attribute
+        # self.login_logo = tk.PhotoImage(file=image_path)
 
 
-        tk.Label(master=self, image=self.login_logo, bg="#ffffff", border=0).grid(row=0, column=0, rowspan=6,
+        tk.Label(master=self, 
+                 #image=self.login_logo
+                 bg="#ffffff", border=0).grid(row=0, column=0, rowspan=6,
                                                                                   columnspan=2, padx=10, pady=10)
 
         # Label containing the welcome heading
