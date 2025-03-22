@@ -1,23 +1,22 @@
 # Third party imports
+import os
 import tkinter as tk
-# from student_frame import StudentFrame
-# from authenticator import authenticate
-# from user import User
-# from reset_pw import ResetPW
-# from select_role import Role
+from tkinter import filedialog
+import pandas as pd
+import numpy as np
 
 
 # Local application imports
 
 
-class LoginFrame(tk.Frame):
+class InputFrame(tk.Frame):
     """
-    A LoginFrame class for all users of CodeVenture.
+    A InputFrame class for user to insert the CSI data.
     """
 
     def __init__(self, master):
         """
-        Constructor for the LoginFrame class.
+        Constructor for the InputFrame class.
         :param master: Tk object; the main window that the
                        login frame is to be contained.
         
@@ -49,79 +48,125 @@ class LoginFrame(tk.Frame):
         # # create a PhotoImage object from the image path, set the PhotoImage object to a class attribute
         # self.login_logo = tk.PhotoImage(file=image_path)
 
+        # Configure grid weights to prevent shifting
+        self.grid_rowconfigure(0, weight=1)  # Prioritize top row
+        self.grid_columnconfigure(0, weight=1)  # Allow centering horizontally
 
-        tk.Label(master=self, 
-                 #image=self.login_logo
-                 bg="#ffffff", border=0).grid(row=0, column=0, rowspan=6,
-                                                                                  columnspan=2, padx=10, pady=10)
+
+        # tk.Label(master=self, 
+        #          #image=self.login_logo
+        #          bg="#ffffff", border=0).grid(row=0, column=0, rowspan=6,
+                                                                                #   columnspan=2, padx=10, pady=10)
 
         # Label containing the welcome heading
-        login_title = tk.Label(master=self, fg="#347f8c",
-                               text="Welcome to "
-                                    "CodeVenture",
+        title = tk.Label(master=self, fg="#347f8c",
+                               text="Human Activity Recognition with "
+                                    "wifi signal",
                                font=("Microsoft Yahei UI Light", 25, "bold"), bg="#ffffff")
-        login_title.grid(row=0, column=2, columnspan=2, padx=10, pady=10)
-
-        # Variable and entry for username
-        self.username = tk.StringVar()
-        self.username_entry = tk.Entry(border=0, master=self, textvariable=self.username,
-                                       font=("Microsoft Yahei UI Light", 11), foreground="#3d95a5")
-        # Position and layout the username entry field.
-        self.username_entry.grid(row=1, column=2, columnspan=2, padx=50, pady=0, sticky="SEW")
-        # Set the initial text in the entry field to "Username."
-        self.username_entry.insert(0, "Username")
-        # Bind the clear_username_entry function to the FocusIn event.
-        self.username_entry.bind("<FocusIn>", self.clear_username_entry)
-        # Bind the repopulate_username_entry function to the FocusOut event.
-        self.username_entry.bind("<FocusOut>", self.repopulate_username_entry)
-
-        # Create a frame as decoration underline for the username input
-        username_underline = tk.Frame(master=self, bg="#347f8c", height=2)
-        username_underline.grid(row=2, column=2, columnspan=2, sticky="NEW", padx=50, pady=0)
-        # Lift (bring to the front) the username underline element
-        username_underline.lift()
+        title.grid(row=0, column=2, columnspan=2, padx=10, pady=50, sticky="n")
 
 
 
-        # Variable and entry to password works the same way as username above
-        self.password = tk.StringVar()
-        self.password_entry = tk.Entry(border=0, master=self, textvariable=self.password,
-                                       font=("Microsoft Yahei UI Light", 11), foreground="#3d95a5")
-        self.password_entry.grid(row=3, column=2, columnspan=2, padx=50, pady=0, sticky="SEW")
-        self.password_entry.insert(0, "Password")
-        self.password_entry.bind("<FocusIn>", self.clear_password_entry)
-        self.password_entry.bind("<FocusOut>", self.repopulate_password_entry)
-        self.password_entry.bind("<KeyRelease>", self.musk_password_entry)
+        # Variable to store file path
+        self.file_path = tk.StringVar()
 
-        # Create a frame as decoration underline for the password input
-        password_underline = tk.Frame(master=self, bg="#347f8c", height=2)
-        password_underline.grid(row=4, column=2, columnspan=2, sticky="NEW", padx=50, pady=0)
-        # Lift (bring to the front) the username underline element
-        password_underline.lift()
+        # Entry field (read-only) for file display (hidden later)
+        self.file_entry = tk.Entry(self, textvariable=self.file_path, font=("Microsoft Yahei UI Light", 11),
+                                foreground="#3d95a5", state="readonly", width=30)
+        self.file_entry.grid(row=1, column=2, columnspan=2, padx=30, pady=5, sticky="SEW")
+
+        # File name label 
+        self.file_label = tk.Label(self, text="No file selected", font=("Arial", 11), 
+                                 fg="gray")  
+        self.file_label.grid(row=1, column=2, columnspan=2, padx=30, pady=5, sticky="SEW")
+
+        # Browse Button
+        self.browse_button = tk.Button(self, text="Browse", command=self.browse_file,
+                                    font=("Microsoft Yahei UI Light", 11), bg="#347f8c", fg="white")
+        self.browse_button.grid(row=1, column=4, padx=5, pady=5, sticky="W")
 
 
-        # Button to login
-        login_button = tk.Button(master=self, text="Login",
-                                 command=self.authenticate_login, font=("Microsoft Yahei UI Light", 11), fg='#fff',
-                                 bg="#347f8c", border=0)
-        login_button.grid(row=5, column=2, columnspan=2, padx=50, pady=10, sticky=tk.EW)
 
-        # Button to forgot password
-        forgot_password_button = tk.Button(bg="#ffffff", cursor='hand2', master=self, text="Forgot Password",fg='#347f8c',
-                                           command=self.forgot_password, relief="flat", borderwidth=0,
+
+        # Button to predict activity
+        predict_button = tk.Button(master=self, text="Predict Activity",
+                                 command=self.run_CNN, font=("Microsoft Yahei UI Light", 11), fg='#fff',
+                                 bg="#347f8c", border=0, width=30)
+        predict_button.grid(row=5, column=2, columnspan=2, padx=50, pady=30, sticky=tk.EW)
+
+
+
+        # Button to open FAQ?
+        FAQ_button = tk.Button(bg="#ffffff", cursor='hand2', master=self, text="FAQ",fg='#347f8c',
+                                           command=self.open_FAQ, relief="flat", borderwidth=0,
                                            font=("Microsoft Yahei UI Light", 10, "underline"))
-        forgot_password_button.grid(row=6, column=2, padx=50, sticky=tk.W)
+        FAQ_button.grid(row=6, column=2, padx=50, sticky=tk.W)
 
-        # Button to sign up
-        sign_up_button = tk.Button(bg="#ffffff", master=self, text="Sign Up", fg='#347f8c',relief="flat", cursor='hand2'
-                                   , font=("Microsoft Yahei UI Light", 10, 'underline'), borderwidth=0, command=self.sign_up)
-        sign_up_button.grid(row=6, column=3, padx=50, sticky=tk.E)
+        # # Button to sign up
+        # sign_up_button = tk.Button(bg="#ffffff", master=self, text="Sign Up", fg='#347f8c',relief="flat", cursor='hand2'
+        #                            , font=("Microsoft Yahei UI Light", 10, 'underline'), borderwidth=0, command=self.sign_up)
+        # sign_up_button.grid(row=6, column=3, padx=50, sticky=tk.E)
 
         # Variable and label to inform user of login outcome
-        self.login_text = tk.StringVar()
-        login_message = tk.Label(bg="#ffffff", fg='red', master=self, textvariable=self.login_text)
+        # self.login_text = tk.StringVar()
+        # login_message = tk.Label(bg="#ffffff", fg='red', master=self, textvariable=self.login_text)
 
-        login_message.grid(row=7, column=2, columnspan=2, padx=10, pady=10)
+        # login_message.grid(row=7, column=2, columnspan=2, padx=10, pady=10)
+
+    def browse_file(self):
+        """
+        Open the CSV file (raw CSI data)
+
+        :return: None
+        """
+        file_path = filedialog.askopenfilename(title="Select a File",
+                                               filetypes=[("CSV Files", "*.csv"), ("All Files", "*.*")])
+        if file_path:
+            file_name = os.path.basename(file_path)  # Extract just the filename
+
+            # Read and store file content
+            self.data = pd.read_csv(file_path).values
+
+
+        # Hide entry field, show file name
+        self.file_entry.grid_forget()
+        self.file_label.config(text=file_name, fg="black")  # Show only filename
+        self.file_label.grid(row=1, column=2, columnspan=2, padx=30, pady=5, sticky="SEW")
+
+
+    def open_FAQ(self):
+        """
+
+        :return: None
+        """
+        # self.repopulate_password_entry()
+        # self.repopulate_username_entry()
+        # self.place_forget()
+        # # Create and display the password reset page, where the user can reset their password.
+        # reset_frame = ResetPW(self, self.master)
+        # reset_frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+
+    def run_CNN(self):
+        """
+        Run CNN model to make prediction, then open the output frame, showing the prediction result.
+
+        :return: None
+        """
+        # Run CNN here
+
+
+
+
+        output = None
+        self.place_forget()  # Hide the current frame properly
+
+        # Create and display the Patient login frame
+        OutputFrame(self.master, self, output).place(relx=0.5, rely=0.5, anchor=tk.CENTER)  # Place OutputFrame correctly
+        
+
+
+
+
 
     def clear_username_entry(self, event):
         """
@@ -129,44 +174,9 @@ class LoginFrame(tk.Frame):
         :param event: Event object
         :return: None
         """
-        self.username_entry.delete(0, tk.END)
+        # self.username_entry.delete(0, tk.END)
+        pass
 
-    def repopulate_username_entry(self, event=None):
-        """
-        Repopulates the username entry field with a default value if it's empty.
-        :param event: Event object (optional)
-        :return: None
-        """
-        if self.username_entry.get() == "":
-            self.username_entry.insert(0, "Username")
-
-    def clear_password_entry(self, event):
-        """
-        Clears the password entry field when it receives focus.
-        :param event: Event object
-        :return: None
-        """
-        self.password_entry.delete(0, tk.END)
-
-    def repopulate_password_entry(self, event=None):
-        """
-        Repopulates the password entry field with a default value if it's empty.
-        :param event: Event object (optional)
-        :return: None
-        """
-        if self.password_entry.get() == "":
-            self.password_entry.insert(0, "Password")
-
-
-
-    def musk_password_entry(self, event):
-        """
-        Masks the password entry field when it's not set to the default value.
-        :param event: Event object
-        :return: None
-        """
-        if self.password_entry.get() != "Password":
-            self.password_entry.config(show="*")
 
     def sign_up(self):
         """
@@ -176,61 +186,36 @@ class LoginFrame(tk.Frame):
         
         :return: None
         """
-        self.repopulate_password_entry()
-        self.repopulate_username_entry()
-        self.place_forget()
-        # Create and display the Role selection page for the user to choose their role (e.g., student, teacher, parent).
-        Role(self, self.master).place(relx=0.5, rely=0.5, anchor=tk.CENTER)
-
-    def forgot_password(self):
-        """
-        Allows the user to initiate the process of resetting their password. This function prepares the user interface for
-        password reset by clearing any previous entries in the username and password fields. It then navigates to the
-        password reset page where the user can reset their password.
-
-        :return: None
-        """
-        self.repopulate_password_entry()
-        self.repopulate_username_entry()
-        self.place_forget()
-        # Create and display the password reset page, where the user can reset their password.
-        reset_frame = ResetPW(self, self.master)
-        reset_frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
-
-    def authenticate_login(self):
-        """
-        Handles the login authentication process. This function is triggered when the user clicks the login button.
-        It communicates with the authentication system to verify the provided username and password. If the user is
-        successfully authenticated, it proceeds to grant access to the appropriate user role interface (e.g., StudentFrame).
-        If authentication fails, it displays an error message to the user.
-
-        :return: None
-        # """
-        # auth_res = authenticate(self.username.get(),
-        #                         self.password.get())
-
-
-        # if isinstance(auth_res, User):
-
-        #     """Clear the username and password entry fields."""
-        #     self.username_entry.delete(0, tk.END)  # Clear the username entry field
-        #     self.password_entry.delete(0, tk.END)  # Clear the password entry field
-
-        #     if auth_res.get_role() == "student":  # patient login
-        #         self.login_text.set("")
-        #         # Remove login page from display
-        #         self.repopulate_password_entry()
-        #         self.repopulate_username_entry()
-        #         self.place_forget()
-
-        #         # Create and display the Patient login frame
-        #         # StudentFrame(self.master, self, auth_res).pack(fill=tk.BOTH, expand=True)
-
-        #     elif auth_res.get_role() in ["parent", "teacher"]:
-        #         self.login_text.set("other user's menu is not available yet")
-        # else:
-        #     self.login_text.set(auth_res)
+        # self.repopulate_password_entry()
+        # self.repopulate_username_entry()
+        # self.place_forget()
+        # # Create and display the Role selection page for the user to choose their role (e.g., student, teacher, parent).
+        # Role(self, self.master).place(relx=0.5, rely=0.5, anchor=tk.CENTER)
         pass
+
+
+
+
+class OutputFrame(tk.Frame):
+    def __init__(self, master, previous_frame, output):
+        super().__init__(master)
+        self.master = master
+        self.previous_frame = previous_frame  # Store the previous frame (login page)
+        self.output = output  # Store authenticated user details
+
+        # Add a Back Button to return to login
+        back_button = tk.Button(master=self, text="Make new prediction",
+                                 command=self.go_back, font=("Microsoft Yahei UI Light", 11), fg='#fff',
+                                 bg="#347f8c", border=0, width=30)
+        back_button.pack()
+
+    def go_back(self):
+        self.place_forget()  # Hide the OutputFrame properly
+        self.previous_frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)  # Show InputFrame again
+
+
+
+
 
 if __name__ == "__main__":
     root = tk.Tk()
@@ -238,5 +223,5 @@ if __name__ == "__main__":
     root.geometry("900x540")
     root.resizable(width=False, height=False)
     root.configure(bg="#ffffff")
-    LoginFrame(root).place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+    InputFrame(root).place(relx=0.5, rely=0.5, anchor=tk.CENTER)
     root.mainloop()
