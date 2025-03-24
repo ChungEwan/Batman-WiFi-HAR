@@ -11,6 +11,10 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 
+import torchvision
+import torchvision.transforms as transforms
+import torchvision.io as io
+
 
 # Local application imports
 
@@ -146,16 +150,20 @@ class InputFrame(tk.Frame):
 
     def toTensor(self):
         image_shape = (300, 166)
+        target_size=(256, 256)
 
         # Ensure 2D shape (handle different input sizes)
         if len(self.data.shape) == 1:  # If flat, assume it's a row vector
             data = self.data.reshape(1, -1)  # Convert to (1, N)
+        else:
+            data = self.data
         h, w = data.shape
 
         # Convert to tensor and resize
         data = torch.tensor(data, dtype=torch.float32).unsqueeze(0)  # (1, H, W) for grayscale
-        resize_transform = transforms.Resize(self.target_size)  # Resize to fixed (H, W)
+        resize_transform = transforms.Resize(target_size)  # Resize to fixed (H, W)
         data = resize_transform(data)  # Resize tensor
+
 
         return data
 
@@ -186,7 +194,8 @@ class InputFrame(tk.Frame):
 
         # Load the saved weights into the model
         loaded_model = CNNModel(10)  # Recreate the model architecture
-        loaded_model.load_state_dict(torch.load("cnn_model_weights.pth")) # change to file path
+        # loaded_model.load_state_dict(torch.load(r"C:\Users\USER\Downloads\cnn_model_weights_mini_vgg.pth")) # change to file path
+        loaded_model.load_state_dict(torch.load(r"C:\Users\USER\Downloads\cnn_model_weights_mini_vgg.pth",map_location=torch.device('cpu')))
         loaded_model.to(device)
         loaded_model.eval()  # Set to evaluation mode
 
