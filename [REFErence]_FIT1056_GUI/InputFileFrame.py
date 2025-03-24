@@ -6,6 +6,12 @@ import pandas as pd
 import numpy as np
 
 
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import torch.nn.functional as F
+
+
 # Local application imports
 
 
@@ -40,6 +46,8 @@ class InputFrame(tk.Frame):
         self.master = master
         self.master.configure(bg="#ffffff")
         self.configure(bg="#ffffff")
+
+        self.model = self.loadWeight()
 
         # Image obtained from:
         # https://www.veryicon.com/icons/healthcate-medical/medical-icon-two-color-icon/ico-health-clinic.html
@@ -134,6 +142,61 @@ class InputFrame(tk.Frame):
         self.file_label.grid(row=1, column=2, columnspan=2, padx=30, pady=5, sticky="SEW")
 
 
+
+
+    def toTensor(self):
+        image_shape = (300, 166)
+
+        # Ensure 2D shape (handle different input sizes)
+        if len(self.data.shape) == 1:  # If flat, assume it's a row vector
+            data = self.data.reshape(1, -1)  # Convert to (1, N)
+        h, w = data.shape
+
+        # Convert to tensor and resize
+        data = torch.tensor(data, dtype=torch.float32).unsqueeze(0)  # (1, H, W) for grayscale
+        resize_transform = transforms.Resize(self.target_size)  # Resize to fixed (H, W)
+        data = resize_transform(data)  # Resize tensor
+
+        return data
+
+    def run_CNN(self):
+        """
+        Run CNN model to make prediction, then open the output frame, showing the prediction result.
+
+        :return: None
+        """
+        # Convert data to tensors
+        tensor = self.toTensor()
+
+        output = self.model(tensor)
+        _, output = torch.max(output, 1)
+
+        output = None
+
+        self.place_forget()  # Hide the current frame properly
+
+        # Create and display the Patient login frame
+        OutputFrame(self.master, self, output).place(relx=0.5, rely=0.5, anchor=tk.CENTER)  # Place OutputFrame correctly
+        
+
+
+    def loadWeight(self):
+        # set the device we will be using to train the model
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+        # Load the saved weights into the model
+        loaded_model = CNNModel(10)  # Recreate the model architecture
+        loaded_model.load_state_dict(torch.load("cnn_model_weights.pth")) # change to file path
+        loaded_model.to(device)
+        loaded_model.eval()  # Set to evaluation mode
+
+        return loaded_model
+
+
+
+
+
+
     def open_FAQ(self):
         """
 
@@ -145,28 +208,6 @@ class InputFrame(tk.Frame):
         # # Create and display the password reset page, where the user can reset their password.
         # reset_frame = ResetPW(self, self.master)
         # reset_frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
-
-    def run_CNN(self):
-        """
-        Run CNN model to make prediction, then open the output frame, showing the prediction result.
-
-        :return: None
-        """
-        # Run CNN here
-
-
-
-
-        output = None
-        self.place_forget()  # Hide the current frame properly
-
-        # Create and display the Patient login frame
-        OutputFrame(self.master, self, output).place(relx=0.5, rely=0.5, anchor=tk.CENTER)  # Place OutputFrame correctly
-        
-
-
-
-
 
     def clear_username_entry(self, event):
         """
@@ -192,6 +233,61 @@ class InputFrame(tk.Frame):
         # # Create and display the Role selection page for the user to choose their role (e.g., student, teacher, parent).
         # Role(self, self.master).place(relx=0.5, rely=0.5, anchor=tk.CENTER)
         pass
+
+
+
+
+class CNNModel(nn.Module):
+    def __init__(self, num_classes=10):  # Adjust num_classes as needed
+        super(CNNModel, self).__init__()
+
+        # Block 1
+        self.conv1 = nn.Conv2d(in_channels=1, out_channels=64, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1)
+        self.bn1 = nn.BatchNorm2d(64)
+        self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2)  # Reduces to (150, 83)
+
+        # Block 2
+        self.conv3 = nn.Conv2d(in_channels=64, out_channels=128, kernel_size=3, padding=1)
+        self.conv4 = nn.Conv2d(in_channels=128, out_channels=128, kernel_size=3, padding=1)
+        self.bn2 = nn.BatchNorm2d(128)
+        self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2)  # Reduces to (75, 41)
+
+        # Block 3
+        self.conv5 = nn.Conv2d(in_channels=128, out_channels=256, kernel_size=3, padding=1)
+        self.conv6 = nn.Conv2d(in_channels=256, out_channels=256, kernel_size=3, padding=1)
+        self.bn3 = nn.BatchNorm2d(256)
+        self.pool3 = nn.MaxPool2d(kernel_size=2, stride=2)  # Reduces to (37, 20)
+
+        # Compute the flattened feature size
+        self.flatten_dim = self._get_flatten_dim()
+
+        # Fully connected layers
+        self.fc1 = nn.Linear(self.flatten_dim, 512)
+        self.fc2 = nn.Linear(512, num_classes)
+
+    def _get_flatten_dim(self):
+        """Helper function to compute feature map size after convolutions."""
+        with torch.no_grad():
+            dummy_input = torch.zeros(1, 1, 300, 166)  # Batch size 1, single channel
+            x = self.pool1(F.relu(self.bn1(self.conv2(F.relu(self.conv1(dummy_input))))))
+            x = self.pool2(F.relu(self.bn2(self.conv4(F.relu(self.conv3(x))))))
+            x = self.pool3(F.relu(self.bn3(self.conv6(F.relu(self.conv5(x))))))
+            return x.numel()
+
+    def forward(self, x):
+        x = self.pool1(F.relu(self.bn1(self.conv2(F.relu(self.conv1(x))))))
+        x = self.pool2(F.relu(self.bn2(self.conv4(F.relu(self.conv3(x))))))
+        x = self.pool3(F.relu(self.bn3(self.conv6(F.relu(self.conv5(x))))))
+        x = x.view(x.size(0), -1)  # Flatten
+        x = F.relu(self.fc1(x))
+        x = self.fc2(x)  # No activation (CrossEntropyLoss applies softmax)
+        return x
+
+
+
+
+
 
 
 
