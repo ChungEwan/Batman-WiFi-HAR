@@ -15,6 +15,9 @@ import torchvision
 import torchvision.transforms as transforms
 import torchvision.io as io
 
+import matplotlib.pyplot as plt
+
+
 
 # Local application imports
 
@@ -52,6 +55,7 @@ class InputFrame(tk.Frame):
         self.configure(bg="#ffffff")
 
         self.model = self.loadWeight()
+        self.activities = ['waving', 'twist', 'standing', 'squatting', 'rubhand', 'pushpull', 'punching', 'nopeople', 'jump', 'clap']
 
         # Image obtained from:
         # https://www.veryicon.com/icons/healthcate-medical/medical-icon-two-color-icon/ico-health-clinic.html
@@ -150,7 +154,7 @@ class InputFrame(tk.Frame):
 
     def toTensor(self):
         image_shape = (300, 166)
-        target_size=(256, 256)
+        # target_size=(256, 256) # no need this, model is trained on 300x166 images (166 for 166 subcarriers)
 
         # Ensure 2D shape (handle different input sizes)
         if len(self.data.shape) == 1:  # If flat, assume it's a row vector
@@ -161,8 +165,14 @@ class InputFrame(tk.Frame):
 
         # Convert to tensor and resize
         data = torch.tensor(data, dtype=torch.float32).unsqueeze(0)  # (1, H, W) for grayscale
-        resize_transform = transforms.Resize(target_size)  # Resize to fixed (H, W)
-        data = resize_transform(data)  # Resize tensor
+        data = F.interpolate(data.unsqueeze(0), size=image_shape, mode="bilinear", align_corners=False).squeeze(0)
+        image_np = data.squeeze(0).numpy()
+        # data =  ((data - data.min()) / (data.max() - data.min())) * 255
+        plt.imsave("[REFErence]_FIT1056_GUI/output_image.png", image_np, cmap='gray') # save as image
+        data = io.read_image("[REFErence]_FIT1056_GUI/output_image.png", mode=io.image.ImageReadMode.GRAY).type(torch.float32) # load image
+        # resize_transform = transforms.Resize(image_shape)  # Resize to fixed (H, W)
+        # data = resize_transform(data)  # Resize tensor
+        # print(data.shape)
 
 
         return data
@@ -174,12 +184,17 @@ class InputFrame(tk.Frame):
         :return: None
         """
         # Convert data to tensors
-        tensor = self.toTensor()
+        tensor = self.toTensor().unsqueeze(0)
+        # print(tensor)
+        # print(tensor.shape)
 
-        output = self.model(tensor)
-        _, output = torch.max(output, 1)
-
-        output = None
+        with torch.no_grad(): # To prevent weights from getting updated
+            logits = self.model(tensor) # raw logits
+        _, output = torch.max(logits, 1) # get index of greatest value
+        output_prob = torch.nn.functional.softmax(logits, dim=1) # normalise logits values to add up to 1
+        for index in range(len(self.activities)): # print probability of each activity
+            print(f"{self.activities[index]}: {output_prob[0][index]}")
+        print(self.activities[output]) # activity with highest probability :D
 
         self.place_forget()  # Hide the current frame properly
 
@@ -195,7 +210,7 @@ class InputFrame(tk.Frame):
         # Load the saved weights into the model
         loaded_model = CNNModel(10)  # Recreate the model architecture
         # loaded_model.load_state_dict(torch.load(r"C:\Users\USER\Downloads\cnn_model_weights_mini_vgg.pth")) # change to file path
-        loaded_model.load_state_dict(torch.load(r"C:\Users\USER\Downloads\cnn_model_weights_mini_vgg.pth",map_location=torch.device('cpu')))
+        loaded_model.load_state_dict(torch.load("[REFErence]_FIT1056_GUI/cnn_model_weights_mini_vgg.pth", map_location=torch.device('cpu')))
         loaded_model.to(device)
         loaded_model.eval()  # Set to evaluation mode
 
