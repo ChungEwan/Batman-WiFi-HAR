@@ -168,8 +168,8 @@ class InputFrame(tk.Frame):
         data = F.interpolate(data.unsqueeze(0), size=image_shape, mode="bilinear", align_corners=False).squeeze(0)
         image_np = data.squeeze(0).numpy()
         # data =  ((data - data.min()) / (data.max() - data.min())) * 255
-        plt.imsave("[REFErence]_FIT1056_GUI/output_image.png", image_np, cmap='gray') # save as image
-        data = io.read_image("[REFErence]_FIT1056_GUI/output_image.png", mode=io.image.ImageReadMode.GRAY).type(torch.float32) # load image
+        plt.imsave(r"C:\Users\USER\Desktop\FIT3164\FIT3164\[REFErence]_FIT1056_GUI\output_image.png", image_np, cmap='gray') # save as image
+        data = io.read_image(r"C:\Users\USER\Desktop\FIT3164\FIT3164\[REFErence]_FIT1056_GUI\output_image.png", mode=io.image.ImageReadMode.GRAY).type(torch.float32) # load image
         # resize_transform = transforms.Resize(image_shape)  # Resize to fixed (H, W)
         # data = resize_transform(data)  # Resize tensor
         # print(data.shape)
@@ -188,18 +188,30 @@ class InputFrame(tk.Frame):
         # print(tensor)
         # print(tensor.shape)
 
+        probs = [{}, None]
+
         with torch.no_grad(): # To prevent weights from getting updated
             logits = self.model(tensor) # raw logits
         _, output = torch.max(logits, 1) # get index of greatest value
         output_prob = torch.nn.functional.softmax(logits, dim=1) # normalise logits values to add up to 1
         for index in range(len(self.activities)): # print probability of each activity
+            probs[0][self.activities[index]] = float(output_prob[0][index])
             print(f"{self.activities[index]}: {output_prob[0][index]}")
         print(self.activities[output]) # activity with highest probability :D
+        probs[1] = self.activities[output]
+
+        sorted_probs = dict(sorted(probs[0].items(), key=lambda item: item[1], reverse=True))
+
+        # Print the sorted dictionary
+        print(sorted_probs)
+
+        probs[0] = sorted_probs
+        
 
         self.place_forget()  # Hide the current frame properly
 
         # Create and display the Patient login frame
-        OutputFrame(self.master, self, output).place(relx=0.5, rely=0.5, anchor=tk.CENTER)  # Place OutputFrame correctly
+        OutputFrame(self.master, self, probs).place(relx=0.5, rely=0.5, anchor=tk.CENTER)  # Place OutputFrame correctly
         
 
 
@@ -210,7 +222,7 @@ class InputFrame(tk.Frame):
         # Load the saved weights into the model
         loaded_model = CNNModel(10)  # Recreate the model architecture
         # loaded_model.load_state_dict(torch.load(r"C:\Users\USER\Downloads\cnn_model_weights_mini_vgg.pth")) # change to file path
-        loaded_model.load_state_dict(torch.load("[REFErence]_FIT1056_GUI/cnn_model_weights_mini_vgg.pth", map_location=torch.device('cpu')))
+        loaded_model.load_state_dict(torch.load(r"C:\Users\USER\Desktop\FIT3164\FIT3164\[REFErence]_FIT1056_GUI\cnn_model_weights_mini_vgg.pth", map_location=torch.device('cpu')))
         loaded_model.to(device)
         loaded_model.eval()  # Set to evaluation mode
 
@@ -321,7 +333,25 @@ class OutputFrame(tk.Frame):
         super().__init__(master)
         self.master = master
         self.previous_frame = previous_frame  # Store the previous frame (login page)
-        self.output = output  # Store authenticated user details
+        self.output = output  # Store the output
+
+        # Get the highest probability action
+        prediction_text = f"Predicted Action: {output[1]}\n"
+
+
+        # Label to display the output
+        output_label = tk.Label(self, text=prediction_text, font=("Microsoft Yahei UI Light", 12), fg="#000")
+        output_label.pack(pady=20)
+
+        # Create a string to display the sorted output
+        sorted_output_text = "Prediction Probabilities:\n"
+        dictionary = output[0]
+        for activity, prob in dictionary.items():
+            sorted_output_text += f"{activity}: {prob:.6f}\n"
+
+        # Label to display the sorted output
+        output_label = tk.Label(self, text=sorted_output_text, font=("Microsoft Yahei UI Light", 12), fg="#000")
+        output_label.pack(pady=20)
 
         # Add a Back Button to return to login
         back_button = tk.Button(master=self, text="Make new prediction",
