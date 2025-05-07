@@ -341,6 +341,7 @@ class OutputFrame(tk.Frame):
         self.master = master
         self.previous_frame = previous_frame  # Store the previous frame (login page)
         self.output = output  # Store the output
+        self.toggle_state = False  # Track if it's expanded or collapsed
 
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)  
@@ -385,17 +386,39 @@ class OutputFrame(tk.Frame):
 
 
         # Add a Back Button to return to login
-        back_button = tk.Button(self, text="Make new prediction",
+        self.back_button = tk.Button(self, text="Make new prediction",
                                 command=self.go_back, font=("Microsoft Yahei UI Light", 11), fg='#fff',
-                                bg="#347f8c", border=0, width=30)
-        back_button.grid(row=5, column=0, pady=20, columnspan=2)  # Add gap below the button
+                                bg="#347f8c", border=0, width=50)
+        self.back_button.grid(row=5, column=0, pady=20, padx=20, columnspan=2)  # Add gap below the button
 
 
         # Button to open Statistics
-        Stats_button = tk.Button(cursor='hand2', master=self, text="Statistics",fg='#347f8c',
+        self.Stats_button = tk.Button(cursor='hand2', master=self, text="Statistics",fg='#347f8c',
                                            command=self.open_Stats, relief="flat", borderwidth=0,
                                            font=("Microsoft Yahei UI Light", 10, "underline"))
-        Stats_button.grid(row=1, column=1, sticky="ew")
+        self.Stats_button.grid(row=1, column=1, sticky="ew")
+
+
+        #----------------------------------------------------------
+        # STATISTICS
+        #----------------------------------------------------------
+
+        # set the logo path to variable
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        output_image_path = os.path.join(script_dir, "output_image.png")
+        # create a PhotoImage object from the image path, set the PhotoImage object to a class attribute
+        self.output_image = tk.PhotoImage(file=output_image_path)
+        # tk.Label(master=self, 
+        #             image=self.login_logo, border=0).grid(row=1, column=0, rowspan=3)
+        self.output_image_holder = tk.Label(
+                self,
+                image=self.output_image,
+                relief=tk.RAISED,
+                bg="#ffffff"
+            )
+
+        # Create content but don't show it yet (Statistics)
+        self.hidden_label = tk.Label(self, text="Show stats here!", fg="blue")
 
 
     def go_back(self):
@@ -410,12 +433,19 @@ class OutputFrame(tk.Frame):
 
         :return: None
         """
-        # self.repopulate_password_entry()
-        # self.repopulate_username_entry()
-        # self.place_forget()
-        # # Create and display the password reset page, where the user can reset their password.
-        # reset_frame = ResetPW(self, self.master)
-        # reset_frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+        if self.toggle_state:
+            # Hide content
+            self.hidden_label.grid_remove()
+            self.output_image_holder.grid_remove()
+            self.Stats_button.config(text="Statistics")
+        else:
+            # Show content
+            self.hidden_label.grid(row=5, column=1, padx=5, pady=10)
+            self.output_image_holder.grid(row=5, column=0, padx=10, pady=10)
+            self.Stats_button.config(text="Hide")
+
+            self.back_button.grid(row=6, column=0, pady=20, columnspan=2)
+        self.toggle_state = not self.toggle_state
 
 
 
