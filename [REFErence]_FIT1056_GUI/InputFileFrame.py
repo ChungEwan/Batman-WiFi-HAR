@@ -50,6 +50,7 @@ class InputFrame(tk.Frame):
         super().__init__(master=master)
         # set the master attribute to the master parameter
         # which is our main interface / window
+
         self.master = master
         self.master.configure(bg="#ffffff")
         self.configure(bg="#ffffff")
@@ -118,16 +119,7 @@ class InputFrame(tk.Frame):
                                            font=("Microsoft Yahei UI Light", 10, "underline"))
         FAQ_button.grid(row=6, column=2, padx=50, sticky=tk.W)
 
-        # # Button to sign up
-        # sign_up_button = tk.Button(bg="#ffffff", master=self, text="Sign Up", fg='#347f8c',relief="flat", cursor='hand2'
-        #                            , font=("Microsoft Yahei UI Light", 10, 'underline'), borderwidth=0, command=self.sign_up)
-        # sign_up_button.grid(row=6, column=3, padx=50, sticky=tk.E)
 
-        # Variable and label to inform user of login outcome
-        # self.login_text = tk.StringVar()
-        # login_message = tk.Label(bg="#ffffff", fg='red', master=self, textvariable=self.login_text)
-
-        # login_message.grid(row=7, column=2, columnspan=2, padx=10, pady=10)
 
     def browse_file(self):
         """
@@ -153,6 +145,11 @@ class InputFrame(tk.Frame):
 
 
     def toTensor(self):
+        """
+        Convert CSI data to Tensor
+
+        :return: None
+        """
         image_shape = (300, 166)
         # target_size=(256, 256) # no need this, model is trained on 300x166 images (166 for 166 subcarriers)
 
@@ -200,6 +197,7 @@ class InputFrame(tk.Frame):
         print(self.activities[output]) # activity with highest probability :D
         probs[1] = self.activities[output]
 
+        # Sort outcome based on probabilities
         sorted_probs = dict(sorted(probs[0].items(), key=lambda item: item[1], reverse=True))
 
         # Print the sorted dictionary
@@ -216,13 +214,18 @@ class InputFrame(tk.Frame):
 
 
     def loadWeight(self):
+        """
+        Load weight into the CNN model
+
+        :return: CNNModel
+        """
         # set the device we will be using to train the model
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         # Load the saved weights into the model
         loaded_model = CNNModel(10)  # Recreate the model architecture
         # loaded_model.load_state_dict(torch.load(r"C:\Users\USER\Downloads\cnn_model_weights_mini_vgg.pth")) # change to file path
-        loaded_model.load_state_dict(torch.load(r"C:\Users\USER\Desktop\FIT3164\FIT3164\[REFErence]_FIT1056_GUI\cnn_model_weights_mini_vgg.pth", map_location=torch.device('cpu')))
+        loaded_model.load_state_dict(torch.load(r"C:\Users\USER\Desktop\FIT3164\FIT3164\[REFErence]_FIT1056_GUI\cnn_model_weights_mini_vgg_25_epochs_front.pth", map_location=torch.device('cpu')))
         loaded_model.to(device)
         loaded_model.eval()  # Set to evaluation mode
 
@@ -274,6 +277,7 @@ class InputFrame(tk.Frame):
 
 
 class CNNModel(nn.Module):
+
     def __init__(self, num_classes=10):  # Adjust num_classes as needed
         super(CNNModel, self).__init__()
 
@@ -329,39 +333,89 @@ class CNNModel(nn.Module):
 
 
 class OutputFrame(tk.Frame):
+    """
+    An OutputFrame class to show prediction outcome/output.
+    """
     def __init__(self, master, previous_frame, output):
         super().__init__(master)
         self.master = master
         self.previous_frame = previous_frame  # Store the previous frame (login page)
         self.output = output  # Store the output
 
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_columnconfigure(0, weight=1)  
+
         # Get the highest probability action
         prediction_text = f"Predicted Action: {output[1]}\n"
+
+        # set the logo path to variable
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        image_path = os.path.join(script_dir, "Logo", str(output[1]) + "-100.png")
+        # create a PhotoImage object from the image path, set the PhotoImage object to a class attribute
+        self.login_logo = tk.PhotoImage(file=image_path)
+        # tk.Label(master=self, 
+        #             image=self.login_logo, border=0).grid(row=1, column=0, rowspan=3)
+        tk.Label(
+                self,
+                image=self.login_logo,
+                relief=tk.RAISED,
+                bg="#ffffff"
+            ).grid(row=0, column=0, rowspan=5, padx=10, pady=10)
 
 
         # Label to display the output
         output_label = tk.Label(self, text=prediction_text, font=("Microsoft Yahei UI Light", 12), fg="#000")
-        output_label.pack(pady=20)
+        output_label.grid(row=0, column=1, padx=20, pady=5)
 
-        # Create a string to display the sorted output
-        sorted_output_text = "Prediction Probabilities:\n"
-        dictionary = output[0]
-        for activity, prob in dictionary.items():
-            sorted_output_text += f"{activity}: {prob:.6f}\n"
 
-        # Label to display the sorted output
-        output_label = tk.Label(self, text=sorted_output_text, font=("Microsoft Yahei UI Light", 12), fg="#000")
-        output_label.pack(pady=20)
+
+
+        # # Create a string to display the sorted output
+        # sorted_output_text = "Prediction Probabilities:\n"
+        # dictionary = output[0]
+        # for activity, prob in dictionary.items():
+        #     sorted_output_text += f"{activity}: {prob:.6f}\n"
+
+        # # Label to display the sorted output
+        # sorted_output_label = tk.Label(self, text=sorted_output_text, font=("Microsoft Yahei UI Light", 12), fg="#000")
+        # sorted_output_label.grid(row=1, column=0)
+        
+        tk.Label(root, text=" ", bg="#ffffff"
+        ).grid(row=1, column=1, padx=5, pady=10, rowspan=1)
+
 
         # Add a Back Button to return to login
-        back_button = tk.Button(master=self, text="Make new prediction",
-                                 command=self.go_back, font=("Microsoft Yahei UI Light", 11), fg='#fff',
-                                 bg="#347f8c", border=0, width=30)
-        back_button.pack()
+        back_button = tk.Button(self, text="Make new prediction",
+                                command=self.go_back, font=("Microsoft Yahei UI Light", 11), fg='#fff',
+                                bg="#347f8c", border=0, width=30)
+        back_button.grid(row=5, column=0, pady=20, columnspan=2)  # Add gap below the button
+
+
+        # Button to open Statistics
+        Stats_button = tk.Button(cursor='hand2', master=self, text="Statistics",fg='#347f8c',
+                                           command=self.open_Stats, relief="flat", borderwidth=0,
+                                           font=("Microsoft Yahei UI Light", 10, "underline"))
+        Stats_button.grid(row=1, column=1, sticky="ew")
+
 
     def go_back(self):
+        """
+        Function to go back to InputFrame (previous frame).
+        """
         self.place_forget()  # Hide the OutputFrame properly
         self.previous_frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)  # Show InputFrame again
+
+    def open_Stats(self):
+        """
+
+        :return: None
+        """
+        # self.repopulate_password_entry()
+        # self.repopulate_username_entry()
+        # self.place_forget()
+        # # Create and display the password reset page, where the user can reset their password.
+        # reset_frame = ResetPW(self, self.master)
+        # reset_frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
 
 
 
