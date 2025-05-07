@@ -16,6 +16,7 @@ import torchvision.transforms as transforms
 import torchvision.io as io
 
 import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 
 
@@ -72,12 +73,6 @@ class InputFrame(tk.Frame):
         self.grid_columnconfigure(0, weight=1)  # Allow centering horizontally
         
 
-
-        # tk.Label(master=self, 
-        #          #image=self.login_logo
-        #          bg="#ffffff", border=0).grid(row=0, column=0, rowspan=6,
-                                                                                #   columnspan=2, padx=10, pady=10)
-
         # Label containing the welcome heading
         title = tk.Label(master=self, fg="#347f8c",
                                text="Human Activity Recognition with "
@@ -105,16 +100,11 @@ class InputFrame(tk.Frame):
                                     font=("Microsoft Yahei UI Light", 11), bg="#347f8c", fg="white")
         self.browse_button.grid(row=1, column=4, padx=5, pady=5, sticky="W")
 
-
-
-
         # Button to predict activity
         predict_button = tk.Button(master=self, text="Predict Activity",
                                  command=self.run_CNN, font=("Microsoft Yahei UI Light", 11), fg='#fff',
                                  bg="#347f8c", border=0, width=30)
         predict_button.grid(row=5, column=2, columnspan=2, padx=50, pady=30, sticky=tk.EW)
-
-
 
         # Button to open FAQ?
         FAQ_button = tk.Button(bg="#ffffff", cursor='hand2', master=self, text="FAQ",fg='#347f8c',
@@ -200,14 +190,11 @@ class InputFrame(tk.Frame):
         print(self.activities[output]) # activity with highest probability :D
         probs[1] = self.activities[output]
 
-        # Sort outcome based on probabilities
+        # Sort outcome based on probabilities and save as dictionary
         sorted_probs = dict(sorted(probs[0].items(), key=lambda item: item[1], reverse=True))
 
         # Print the sorted dictionary
-        print(sorted_probs)
-
-        probs[0] = sorted_probs
-        
+        # print(sorted_probs)
 
         self.place_forget()  # Hide the current frame properly
 
@@ -220,7 +207,7 @@ class InputFrame(tk.Frame):
         """
         Load weight into the CNN model
 
-        :return: CNNModel
+        :return: CNNModel object which have been loaded with the weights
         """
         # set the device we will be using to train the model
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -280,7 +267,10 @@ class InputFrame(tk.Frame):
 
 
 class CNNModel(nn.Module):
+    """
+    A class to for the CNN model.
 
+    """
     def __init__(self, num_classes=10):  # Adjust num_classes as needed
         super(CNNModel, self).__init__()
 
@@ -338,6 +328,11 @@ class CNNModel(nn.Module):
 class OutputFrame(tk.Frame):
     """
     An OutputFrame class to show prediction outcome/output.
+
+        :param master: Tk object; the main window that the
+                       login frame is to be contained.
+        :param previous_frame: the login frame.
+        :param output: A list, where the 0th index is a sorted dictionary of the prediction outcome, and the 1st index is the activity having the highest probability
     """
     def __init__(self, master, previous_frame, output):
         super().__init__(master)
@@ -349,70 +344,58 @@ class OutputFrame(tk.Frame):
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)  
 
-        # Get the highest probability action
-        prediction_text = f"Predicted Action: {output[1]}\n"
+        # Label to display the Title
+        Title_label = tk.Label(self, text="Output", font=("Microsoft Yahei UI Light", 20, "bold"), fg="#347f8c")
+        Title_label.grid(row=0, column=0, padx=20, pady=5, columnspan=4)
+
 
         # set the logo path to variable
         script_dir = os.path.dirname(os.path.abspath(__file__))
         image_path = os.path.join(script_dir, "Logo", str(output[1]) + "-100.png")
-        # create a PhotoImage object from the image path, set the PhotoImage object to a class attribute
+        # create a PhotoImage object from the image path, set the PhotoImage object to a class attribute (this is for the predicted activity logo/stickman)
         self.login_logo = tk.PhotoImage(file=image_path)
-        # tk.Label(master=self, 
-        #             image=self.login_logo, border=0).grid(row=1, column=0, rowspan=3)
         tk.Label(
                 self,
                 image=self.login_logo,
                 relief=tk.RAISED,
                 bg="#ffffff"
-            ).grid(row=0, column=0, rowspan=5, padx=10, pady=10)
+            ).grid(row=1, column=0, rowspan=2, padx=10, pady=10)
 
 
-        # Label to display the output
+        # Get the highest probability action (located in index 1)
+        prediction_text = f"Predicted Action: {output[1]}\n"
+        # Label to display the predicted activity text
         output_label = tk.Label(self, text=prediction_text, font=("Microsoft Yahei UI Light", 12), fg="#000")
-        output_label.grid(row=0, column=1, padx=20, pady=5)
+        output_label.grid(row=1, column=1, padx=20, pady=5)
 
 
-
-
-        # # Create a string to display the sorted output
-        # sorted_output_text = "Prediction Probabilities:\n"
-        # dictionary = output[0]
-        # for activity, prob in dictionary.items():
-        #     sorted_output_text += f"{activity}: {prob:.6f}\n"
-
-        # # Label to display the sorted output
-        # sorted_output_label = tk.Label(self, text=sorted_output_text, font=("Microsoft Yahei UI Light", 12), fg="#000")
-        # sorted_output_label.grid(row=1, column=0)
-        
-        tk.Label(root, text=" ", bg="#ffffff"
-        ).grid(row=1, column=1, padx=5, pady=10, rowspan=1)
-
-
-        # Add a Back Button to return to login
-        self.back_button = tk.Button(self, text="Make new prediction",
-                                command=self.go_back, font=("Microsoft Yahei UI Light", 11), fg='#fff',
-                                bg="#347f8c", border=0, width=50)
-        self.back_button.grid(row=5, column=0, pady=20, padx=20, columnspan=2)  # Add gap below the button
+        # Get the dictionary containing all probability action (located in index 0)
+        self.probabilities = output[0] 
 
 
         # Button to open Statistics
-        self.Stats_button = tk.Button(cursor='hand2', master=self, text="Statistics",fg='#347f8c',
+        self.Stats_button = tk.Button(cursor='hand2', master=self, text="Show Statistics",fg='#347f8c',
                                            command=self.open_Stats, relief="flat", borderwidth=0,
-                                           font=("Microsoft Yahei UI Light", 10, "underline"))
-        self.Stats_button.grid(row=1, column=1, sticky="ew")
+                                           font=("Microsoft Yahei UI Light", 11, "underline"))
+        self.Stats_button.grid(row=2, column=1, sticky="ew")
+
+        
+        # Add a Back Button to return to login
+        self.back_button = tk.Button(self, text="Make new prediction",
+                                command=self.go_back, font=("Microsoft Yahei UI Light", 11), fg='#fff',
+                                bg="#347f8c", border=0, width=30)
+        self.back_button.grid(row=3, column=0, pady=20, padx=20, columnspan=4)  
 
 
         #----------------------------------------------------------
         # STATISTICS
         #----------------------------------------------------------
 
-        # set the logo path to variable
+        # set the heatmap image path to variable
         script_dir = os.path.dirname(os.path.abspath(__file__))
         output_image_path = os.path.join(script_dir, "output_image.png")
-        # create a PhotoImage object from the image path, set the PhotoImage object to a class attribute
+        # create a PhotoImage object from the image path, set the PhotoImage object to a class attribute (this is for the predicted activity heatmap)
         self.output_image = tk.PhotoImage(file=output_image_path)
-        # tk.Label(master=self, 
-        #             image=self.login_logo, border=0).grid(row=1, column=0, rowspan=3)
         self.output_image_holder = tk.Label(
                 self,
                 image=self.output_image,
@@ -420,8 +403,21 @@ class OutputFrame(tk.Frame):
                 bg="#ffffff"
             )
 
-        # Create content but don't show it yet (Statistics)
-        self.hidden_label = tk.Label(self, text="Show stats here!", fg="blue")
+        # Create horizontal bar graph (using log to show activities with low probability)
+        fig, ax = plt.subplots(figsize=(4, 3))
+        bars = ax.barh(list(self.probabilities.keys()), self.probabilities.values())
+        ax.set_title("Probabilities")
+        ax.set_xlabel("Probabilities")
+        ax.set_ylabel("Actions")
+        ax.set_xscale('log')  # log scale
+        ax.bar_label(bars, fontsize=9)
+
+        # Use tight_layout to adjust padding and prevent cutting off
+        fig.tight_layout()
+
+        graph = FigureCanvasTkAgg(fig, self)
+        graph.draw()
+        self.graph = graph.get_tk_widget()
 
 
     def go_back(self):
@@ -433,21 +429,26 @@ class OutputFrame(tk.Frame):
 
     def open_Stats(self):
         """
+        Function to make the statistics appear on frame
 
         :return: None
         """
-        if self.toggle_state:
+        if self.toggle_state: # when toggle _state = False
             # Hide content
-            self.hidden_label.grid_remove()
+            # self.hidden_label.grid_remove()
             self.output_image_holder.grid_remove()
+            self.graph.grid_remove()
             self.Stats_button.config(text="Statistics")
+            self.back_button.config(width=30)
         else:
             # Show content
-            self.hidden_label.grid(row=5, column=1, padx=5, pady=10)
-            self.output_image_holder.grid(row=5, column=0, padx=10, pady=10)
-            self.Stats_button.config(text="Hide")
+            self.back_button.config(width=60)
+                    
+            # self.hidden_label.grid(row=2, column=4, padx=5, pady=10)
+            self.output_image_holder.grid(row=1, column=2, padx=10, pady=10)
+            self.graph.grid(row=1, column=3, padx=10, pady=10)
+            self.Stats_button.config(text="Hide Statistics")
 
-            self.back_button.grid(row=6, column=0, pady=20, columnspan=2)
         self.toggle_state = not self.toggle_state
 
 
@@ -457,7 +458,7 @@ class OutputFrame(tk.Frame):
 if __name__ == "__main__":
     root = tk.Tk()
     root.title("Login")
-    root.geometry("900x540")
+    root.geometry("1200x700")    
     root.resizable(width=False, height=False)
     root.configure(bg="#ffffff")
     InputFrame(root).place(relx=0.5, rely=0.5, anchor=tk.CENTER)
