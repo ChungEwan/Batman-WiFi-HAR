@@ -1,10 +1,10 @@
 # Third party imports
 import os
-import tkinter as tk
+import customtkinter as ctk
+from PIL import Image
 from tkinter import filedialog
 import pandas as pd
 import numpy as np
-
 
 import torch
 import torch.nn as nn
@@ -19,11 +19,9 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 
-
 # Local application imports
 
-
-class InputFrame(tk.Frame):
+class InputFrame(ctk.CTkFrame):
     """
     A InputFrame class for user to insert the CSI data.
     """
@@ -31,93 +29,66 @@ class InputFrame(tk.Frame):
     def __init__(self, master):
         """
         Constructor for the InputFrame class.
-        :param master: Tk object; the main window that the
-                       login frame is to be contained.
+        :param master: CTk object; the main window that the
+                       input frame is to be contained.
         
         :syntax:
-        In the context of graphical user interfaces (GUIs), "FocusIn" and "FocusOut" are events related to the focus of a user interface element, such as an input field or a button. Here's what each event means:
-
-        FocusIn Event: This event occurs when a GUI element gains focus, which typically happens when a user interacts with it. For example, 
-        when a user clicks on an input field or navigates to it using the keyboard, the input field gains focus, and the "FocusIn" event is triggered. 
-        This event is often used to perform actions when an element becomes the active focus, 
-        such as clearing placeholder text or changing the appearance of the focused element.
-
-        FocusOut Event: This event occurs when a GUI element loses focus, which happens when the user clicks outside the element or navigates away from it. 
-        For example, if a user clicks on an input field, enters some text, and then clicks somewhere else or presses the "Tab" key to move to the next input field, 
-        the first input field loses focus, and the "FocusOut" event is triggered. This event is often used to perform actions when an element is no longer the active focus, 
-        such as restoring placeholder text or validating user input.
+        In the context of graphical user interfaces (GUIs), "FocusIn" and "FocusOut" are events related to the focus of a user interface element, such as an input field or a button.
         """
-        # call the constructor from the parent class, which is tk.Frame
+        # Call the constructor from the parent class, which is ctk.CTkFrame
         super().__init__(master=master)
-        # set the master attribute to the master parameter
-        # which is our main interface / window
-
+        # Set the master attribute to the master parameter, which is our main interface/window
         self.script_dir = os.path.dirname(os.path.abspath(__file__))
         self.master = master
-        self.master.configure(bg="#ffffff")
-        self.configure(bg="#ffffff")
+        self.master.configure(fg_color="#ffffff")
+        self.configure(fg_color="#ffffff")
 
         self.model = self.loadWeight()
         self.activities = ['waving', 'twist', 'standing', 'squatting', 'rubhand', 'pushpull', 'punching', 'nopeople', 'jump', 'clap']
         
-
-        # Image obtained from:
-        # https://www.veryicon.com/icons/healthcate-medical/medical-icon-two-color-icon/ico-health-clinic.html
-        # set the image path to variable
-        # image_path = "./images/changed.png"
-        # # create a PhotoImage object from the image path, set the PhotoImage object to a class attribute
-        # self.login_logo = tk.PhotoImage(file=image_path)
-
         # Configure grid weights to prevent shifting
         self.grid_rowconfigure(0, weight=1)  # Prioritize top row
         self.grid_columnconfigure(0, weight=1)  # Allow centering horizontally
         
-
         # Label containing the welcome heading
-        title = tk.Label(master=self, fg="#347f8c",
-                               text="Human Activity Recognition with "
-                                    "wifi signal",
-                               font=("Microsoft Yahei UI Light", 25, "bold"), bg="#ffffff")
+        title = ctk.CTkLabel(master=self, text_color="#347f8c",
+                             text="Human Activity Recognition with "
+                                  "wifi signal",
+                             font=("Microsoft Yahei UI Light", 25, "bold"), fg_color="#ffffff")
         title.grid(row=0, column=2, columnspan=2, padx=10, pady=50, sticky="n")
 
-
-
         # Variable to store file path
-        self.file_path = tk.StringVar()
+        self.file_path = ctk.StringVar()
 
         # Entry field (read-only) for file display (hidden later)
-        self.file_entry = tk.Entry(self, textvariable=self.file_path, font=("Microsoft Yahei UI Light", 11),
-                                foreground="#3d95a5", state="readonly", width=30)
+        self.file_entry = ctk.CTkEntry(self, textvariable=self.file_path, font=("Microsoft Yahei UI Light", 11),
+                                       text_color="#3d95a5", state="readonly", width=30)
         self.file_entry.grid(row=1, column=2, columnspan=2, padx=30, pady=5, sticky="SEW")
 
-        # File name label 
-        self.file_label = tk.Label(self, text="No file selected", font=("Arial", 11), 
-                                 fg="gray")  
+        # File name label
+        self.file_label = ctk.CTkLabel(self, text="No file selected", font=("Arial", 11), text_color="gray")
         self.file_label.grid(row=1, column=2, columnspan=2, padx=30, pady=5, sticky="SEW")
 
         # Browse Button
-        self.browse_button = tk.Button(self, text="Browse", command=self.browse_file,
-                                    font=("Microsoft Yahei UI Light", 11), bg="#347f8c", fg="white")
+        self.browse_button = ctk.CTkButton(self, text="Browse", command=self.browse_file,
+                                           font=("Microsoft Yahei UI Light", 11), text_color="white", fg_color="#347f8c")
         self.browse_button.grid(row=1, column=4, padx=5, pady=5, sticky="W")
 
         # Button to predict activity
-        predict_button = tk.Button(master=self, text="Predict Activity",
-                                 command=self.run_CNN, font=("Microsoft Yahei UI Light", 11), fg='#fff',
-                                 bg="#347f8c", border=0, width=30)
-        predict_button.grid(row=5, column=2, columnspan=2, padx=50, pady=30, sticky=tk.EW)
+        predict_button = ctk.CTkButton(master=self, text="Predict Activity",
+                                       command=self.run_CNN, font=("Microsoft Yahei UI Light", 11), text_color='#fff',
+                                       fg_color="#347f8c", border_width=0, width=30)
+        predict_button.grid(row=5, column=2, columnspan=2, padx=50, pady=30, sticky="EW")
 
-        # Button to open FAQ?
-        FAQ_button = tk.Button(bg="#ffffff", cursor='hand2', master=self, text="FAQ",fg='#347f8c',
-                                           command=self.open_FAQ, relief="flat", borderwidth=0,
-                                           font=("Microsoft Yahei UI Light", 10, "underline"))
-        FAQ_button.grid(row=6, column=2, padx=50, sticky=tk.W)
-
-
+        # Button to open FAQ
+        FAQ_button = ctk.CTkButton(fg_color="#ffffff", cursor='hand2', master=self, text="FAQ", text_color='#347f8c',
+                                   command=self.open_FAQ, border_width=0,
+                                   font=("Microsoft Yahei UI Light", 10, "underline"))
+        FAQ_button.grid(row=6, column=2, padx=50, sticky="W")
 
     def browse_file(self):
         """
         Open the CSV file (raw CSI data)
-
         :return: None
         """
         file_path = filedialog.askopenfilename(title="Select a File",
@@ -128,11 +99,11 @@ class InputFrame(tk.Frame):
             # Read and store file content
             self.data = pd.read_csv(file_path).values
 
-
         # Hide entry field, show file name
         self.file_entry.grid_forget()
-        self.file_label.config(text=file_name, fg="black")  # Show only filename
+        self.file_label.configure(text=file_name, text_color="black")  # Show only filename
         self.file_label.grid(row=1, column=2, columnspan=2, padx=30, pady=5, sticky="SEW")
+
 
 
 
@@ -191,7 +162,8 @@ class InputFrame(tk.Frame):
         probs[1] = self.activities[output]
 
         # Sort outcome based on probabilities and save as dictionary
-        sorted_probs = dict(sorted(probs[0].items(), key=lambda item: item[1], reverse=True))
+        sorted_probs = dict(sorted(probs[0].items(), key=lambda item: item[1]))
+        probs[0] = sorted_probs
 
         # Print the sorted dictionary
         # print(sorted_probs)
@@ -199,7 +171,7 @@ class InputFrame(tk.Frame):
         self.place_forget()  # Hide the current frame properly
 
         # Create and display the Patient login frame
-        OutputFrame(self.master, self, probs).place(relx=0.5, rely=0.5, anchor=tk.CENTER)  # Place OutputFrame correctly
+        OutputFrame(self.master, self, probs).place(relx=0.5, rely=0.5, anchor=ctk.CENTER)  # Place OutputFrame correctly
         
 
 
@@ -325,7 +297,7 @@ class CNNModel(nn.Module):
 
 
 
-class OutputFrame(tk.Frame):
+class OutputFrame(ctk.CTkFrame):
     """
     An OutputFrame class to show prediction outcome/output.
 
@@ -345,109 +317,66 @@ class OutputFrame(tk.Frame):
         self.grid_columnconfigure(0, weight=1)  
 
         # Label to display the Title
-        Title_label = tk.Label(self, text="Output", font=("Microsoft Yahei UI Light", 20, "bold"), fg="#347f8c")
+        Title_label = ctk.CTkLabel(self, text="Output", font=ctk.CTkFont("Microsoft Yahei UI Light", 20, "bold"), text_color="#347f8c")
         Title_label.grid(row=0, column=0, padx=20, pady=5, columnspan=4)
 
-
-        # set the logo path to variable
         script_dir = os.path.dirname(os.path.abspath(__file__))
         image_path = os.path.join(script_dir, "Logo", str(output[1]) + "-100.png")
-        # create a PhotoImage object from the image path, set the PhotoImage object to a class attribute (this is for the predicted activity logo/stickman)
-        self.login_logo = tk.PhotoImage(file=image_path)
-        tk.Label(
-                self,
-                image=self.login_logo,
-                relief=tk.RAISED,
-                bg="#ffffff"
-            ).grid(row=1, column=0, rowspan=2, padx=10, pady=10)
+        logo_image = Image.open(image_path)  # Load the image using PIL
+        self.login_logo = ctk.CTkImage(light_image=logo_image, size=(100, 100))
+        image_label = ctk.CTkLabel(self, image=self.login_logo, text="")
+        image_label.grid(row=1, column=0, rowspan=2, padx=10, pady=10)
 
-
-        # Get the highest probability action (located in index 1)
         prediction_text = f"Predicted Action: {output[1]}\n"
-        # Label to display the predicted activity text
-        output_label = tk.Label(self, text=prediction_text, font=("Microsoft Yahei UI Light", 12), fg="#000")
+        output_label = ctk.CTkLabel(self, text=prediction_text, font=ctk.CTkFont("Microsoft Yahei UI Light", 12))
         output_label.grid(row=1, column=1, padx=20, pady=5)
 
-
-        # Get the dictionary containing all probability action (located in index 0)
         self.probabilities = output[0] 
 
-
-        # Button to open Statistics
-        self.Stats_button = tk.Button(cursor='hand2', master=self, text="Show Statistics",fg='#347f8c',
-                                           command=self.open_Stats, relief="flat", borderwidth=0,
-                                           font=("Microsoft Yahei UI Light", 11, "underline"))
+        self.Stats_button = ctk.CTkButton(self, text="Show Statistics", command=self.open_Stats,
+                                          font=ctk.CTkFont("Microsoft Yahei UI Light", 11, weight="normal", underline=True), 
+                                          fg_color="transparent", text_color="#347f8c", hover_color="#f0f0f0")
         self.Stats_button.grid(row=2, column=1, sticky="ew")
 
-        
-        # Add a Back Button to return to login
-        self.back_button = tk.Button(self, text="Make new prediction",
-                                command=self.go_back, font=("Microsoft Yahei UI Light", 11), fg='#fff',
-                                bg="#347f8c", border=0, width=30)
-        self.back_button.grid(row=3, column=0, pady=20, padx=20, columnspan=4)  
+        self.back_button = ctk.CTkButton(self, text="Make new prediction", command=self.go_back,
+                                         font=ctk.CTkFont("Microsoft Yahei UI Light", 11, weight="normal"),
+                                         fg_color="#347f8c", 
+                                         text_color="#fff", width=250)
+        self.back_button.grid(row=3, column=0, pady=20, padx=20, columnspan=4)
 
-
-        #----------------------------------------------------------
-        # STATISTICS
-        #----------------------------------------------------------
-
-        # set the heatmap image path to variable
-        script_dir = os.path.dirname(os.path.abspath(__file__))
         output_image_path = os.path.join(script_dir, "output_image.png")
-        # create a PhotoImage object from the image path, set the PhotoImage object to a class attribute (this is for the predicted activity heatmap)
-        self.output_image = tk.PhotoImage(file=output_image_path)
-        self.output_image_holder = tk.Label(
-                self,
-                image=self.output_image,
-                relief=tk.RAISED,
-                bg="#ffffff"
-            )
+        output_image = Image.open(output_image_path)  # Load the image using PIL
+        self.output_image = ctk.CTkImage(light_image=output_image, size=(100, 100))
+        self.output_image_holder = ctk.CTkLabel(self, image=self.output_image, text="")
 
-        # Create horizontal bar graph (using log to show activities with low probability)
         fig, ax = plt.subplots(figsize=(4, 3))
         bars = ax.barh(list(self.probabilities.keys()), self.probabilities.values())
         ax.set_title("Probabilities")
         ax.set_xlabel("Probabilities")
         ax.set_ylabel("Actions")
-        ax.set_xscale('log')  # log scale
+        ax.set_xscale('log')
         ax.bar_label(bars, fontsize=9)
-
-        # Use tight_layout to adjust padding and prevent cutting off
         fig.tight_layout()
 
         graph = FigureCanvasTkAgg(fig, self)
         graph.draw()
         self.graph = graph.get_tk_widget()
 
-
     def go_back(self):
-        """
-        Function to go back to InputFrame (previous frame).
-        """
-        self.place_forget()  # Hide the OutputFrame properly
-        self.previous_frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)  # Show InputFrame again
+        self.place_forget()
+        self.previous_frame.place(relx=0.5, rely=0.5, anchor="center")
 
     def open_Stats(self):
-        """
-        Function to make the statistics appear on frame
-
-        :return: None
-        """
-        if self.toggle_state: # when toggle _state = False
-            # Hide content
-            # self.hidden_label.grid_remove()
+        if self.toggle_state:
             self.output_image_holder.grid_remove()
             self.graph.grid_remove()
-            self.Stats_button.config(text="Statistics")
-            self.back_button.config(width=30)
+            self.Stats_button.configure(text="Show Statistics")
+            self.back_button.configure(width=250)
         else:
-            # Show content
-            self.back_button.config(width=60)
-                    
-            # self.hidden_label.grid(row=2, column=4, padx=5, pady=10)
+            self.back_button.configure(width=500)
             self.output_image_holder.grid(row=1, column=2, padx=10, pady=10)
             self.graph.grid(row=1, column=3, padx=10, pady=10)
-            self.Stats_button.config(text="Hide Statistics")
+            self.Stats_button.configure(text="Hide Statistics")
 
         self.toggle_state = not self.toggle_state
 
@@ -456,10 +385,15 @@ class OutputFrame(tk.Frame):
 
 
 if __name__ == "__main__":
-    root = tk.Tk()
-    root.title("Login")
+    ctk.set_appearance_mode("light")  # Options: "light", "dark", "system"
+    ctk.set_default_color_theme("blue")  # Can customize this if desired
+
+    root = ctk.CTk()
+    root.title("Human Activity Recognition")
     root.geometry("1200x700")    
     root.resizable(width=False, height=False)
-    root.configure(bg="#ffffff")
-    InputFrame(root).place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+    
+    input_frame = InputFrame(root)  # Ensure this class inherits from ctk.CTkFrame
+    input_frame.place(relx=0.5, rely=0.5, anchor=ctk.CENTER)
+
     root.mainloop()
