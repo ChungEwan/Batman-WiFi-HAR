@@ -51,12 +51,14 @@ class InputFrame(tk.Frame):
         # set the master attribute to the master parameter
         # which is our main interface / window
 
+        self.script_dir = os.path.dirname(os.path.abspath(__file__))
         self.master = master
         self.master.configure(bg="#ffffff")
         self.configure(bg="#ffffff")
 
         self.model = self.loadWeight()
         self.activities = ['waving', 'twist', 'standing', 'squatting', 'rubhand', 'pushpull', 'punching', 'nopeople', 'jump', 'clap']
+        
 
         # Image obtained from:
         # https://www.veryicon.com/icons/healthcate-medical/medical-icon-two-color-icon/ico-health-clinic.html
@@ -68,6 +70,7 @@ class InputFrame(tk.Frame):
         # Configure grid weights to prevent shifting
         self.grid_rowconfigure(0, weight=1)  # Prioritize top row
         self.grid_columnconfigure(0, weight=1)  # Allow centering horizontally
+        
 
 
         # tk.Label(master=self, 
@@ -165,8 +168,8 @@ class InputFrame(tk.Frame):
         data = F.interpolate(data.unsqueeze(0), size=image_shape, mode="bilinear", align_corners=False).squeeze(0)
         image_np = data.squeeze(0).numpy()
         # data =  ((data - data.min()) / (data.max() - data.min())) * 255
-        plt.imsave(r"C:\Users\USER\Desktop\FIT3164\FIT3164\[REFErence]_FIT1056_GUI\output_image.png", image_np, cmap='gray') # save as image
-        data = io.read_image(r"C:\Users\USER\Desktop\FIT3164\FIT3164\[REFErence]_FIT1056_GUI\output_image.png", mode=io.image.ImageReadMode.GRAY).type(torch.float32) # load image
+        plt.imsave(os.path.join(self.script_dir, "output_image.png"), image_np, cmap='gray') # save as image
+        data = io.read_image(os.path.join(self.script_dir, "output_image.png"), mode=io.image.ImageReadMode.GRAY).type(torch.float32) # load image
         # resize_transform = transforms.Resize(image_shape)  # Resize to fixed (H, W)
         # data = resize_transform(data)  # Resize tensor
         # print(data.shape)
@@ -225,7 +228,7 @@ class InputFrame(tk.Frame):
         # Load the saved weights into the model
         loaded_model = CNNModel(10)  # Recreate the model architecture
         # loaded_model.load_state_dict(torch.load(r"C:\Users\USER\Downloads\cnn_model_weights_mini_vgg.pth")) # change to file path
-        loaded_model.load_state_dict(torch.load(r"C:\Users\USER\Desktop\FIT3164\FIT3164\[REFErence]_FIT1056_GUI\cnn_model_weights_mini_vgg_25_epochs_front.pth", map_location=torch.device('cpu')))
+        loaded_model.load_state_dict(torch.load(os.path.join(self.script_dir, "cnn_model_weights_mini_vgg_25_epochs_front.pth"), map_location=torch.device('cpu')))
         loaded_model.to(device)
         loaded_model.eval()  # Set to evaluation mode
 
