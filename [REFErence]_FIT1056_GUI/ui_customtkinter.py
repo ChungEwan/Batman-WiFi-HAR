@@ -29,20 +29,20 @@ class ModelFrame(ctk.CTkFrame):
         for i in range(7):
             tab_front.grid_rowconfigure(i, weight=1)
 
-        # Choose file text
-        ctk.CTkLabel(tab_front, text="Choose file:", font=("Microsoft Yahei UI Light", 20)).grid(row=1, column=1, columnspan=2, sticky="nsw")
+        # Select file text
+        ctk.CTkLabel(tab_front, text="Select file:", font=("Microsoft Yahei UI Light", 20)).grid(row=1, column=1, columnspan=2, sticky="sw")
 
         # Front text
-        ctk.CTkLabel(tab_front, text="Front:", font=("Microsoft Yahei UI Light", 13)).grid(row=2, column=1, padx=5, pady=3, sticky="new")
+        ctk.CTkLabel(tab_front, text="Front:", font=("Microsoft Yahei UI Light", 13)).grid(row=2, column=1, padx=5, pady=3, sticky="sew")
 
         # File label text
         file_label_front = ctk.CTkLabel(tab_front, text="No file selected", font=("Arial", 11), text_color="gray", bg_color="white")
-        file_label_front.grid(row=2, column=2, padx=5, pady=5, sticky="new")
+        file_label_front.grid(row=2, column=2, padx=5, pady=5, sticky="sew")
 
         # Browse button
         browse_button = ctk.CTkButton(tab_front, text="Browse", command=browse_file,
                                            font=("Microsoft Yahei UI Light", 11), text_color="white")
-        browse_button.grid(row=2, column=3, padx=5, pady=5, sticky="n")
+        browse_button.grid(row=2, column=3, padx=5, pady=5, sticky="s")
 
         # Predict Button
         predict_button_front = ctk.CTkButton(tab_front, text="Predict", command=lambda: print("Predicting..."))
@@ -58,20 +58,20 @@ class ModelFrame(ctk.CTkFrame):
         for i in range(7):
             tab_side.grid_rowconfigure(i, weight=1)
 
-        # Choose file text
-        ctk.CTkLabel(tab_side, text="Choose file:", font=("Microsoft Yahei UI Light", 20)).grid(row=1, column=1, columnspan=2, sticky="nsw")
+        # Select file text
+        ctk.CTkLabel(tab_side, text="Select file:", font=("Microsoft Yahei UI Light", 20)).grid(row=1, column=1, columnspan=2, sticky="sw")
 
         # Side text
-        ctk.CTkLabel(tab_side, text="Side:  ", font=("Microsoft Yahei UI Light", 13)).grid(row=2, column=1, padx=5, pady=3, sticky="new")
+        ctk.CTkLabel(tab_side, text="Side:  ", font=("Microsoft Yahei UI Light", 13)).grid(row=2, column=1, padx=5, pady=3, sticky="sew")
         
         # File label text
         file_label_side = ctk.CTkLabel(tab_side, text="No file selected", font=("Arial", 11), text_color="gray", bg_color="white")
-        file_label_side.grid(row=2, column=2, padx=5, pady=5, sticky="new")
+        file_label_side.grid(row=2, column=2, padx=5, pady=5, sticky="sew")
 
         # Browse button
         browse_button = ctk.CTkButton(tab_side, text="Browse", command=browse_file,
                                            font=("Microsoft Yahei UI Light", 11), text_color="white")
-        browse_button.grid(row=2, column=3, padx=5, pady=5, sticky="n")
+        browse_button.grid(row=2, column=3, padx=5, pady=5, sticky="s")
 
         # Predict Button
         predict_button_side = ctk.CTkButton(tab_side, text="Predict", command=lambda: print("Predicting..."))
@@ -87,20 +87,20 @@ class ModelFrame(ctk.CTkFrame):
         for i in range(7):
             tab_both.grid_rowconfigure(i, weight=1)
 
-        # Choose file text
-        ctk.CTkLabel(tab_both, text="Choose file:", font=("Microsoft Yahei UI Light", 20)).grid(row=1, column=1, columnspan=2, sticky="nsw")
+        # Select files text
+        ctk.CTkLabel(tab_both, text="Select files:", font=("Microsoft Yahei UI Light", 20)).grid(row=1, column=1, columnspan=2, sticky="sw")
 
         # Front text
-        ctk.CTkLabel(tab_both, text="Front:", font=("Microsoft Yahei UI Light", 13)).grid(row=2, column=1, padx=5, pady=3, sticky="new")
+        ctk.CTkLabel(tab_both, text="Front:", font=("Microsoft Yahei UI Light", 13)).grid(row=2, column=1, padx=5, pady=3, sticky="sew")
         
         # File label text
         file_label_both = ctk.CTkLabel(tab_both, text="No file selected", font=("Arial", 11), text_color="gray", bg_color="white")
-        file_label_both.grid(row=2, column=2, padx=5, pady=5, sticky="new")
+        file_label_both.grid(row=2, column=2, padx=5, pady=5, sticky="sew")
 
         # Browse button
         browse_button = ctk.CTkButton(tab_both, text="Browse", command=browse_file,
                                            font=("Microsoft Yahei UI Light", 11), text_color="white")
-        browse_button.grid(row=2, column=3, padx=5, pady=5, sticky="n")
+        browse_button.grid(row=2, column=3, padx=5, pady=5, sticky="s")
 
         # Side text
         ctk.CTkLabel(tab_both, text="Side:", font=("Microsoft Yahei UI Light", 13)).grid(row=3, column=1, padx=5, pady=3, sticky="new")
