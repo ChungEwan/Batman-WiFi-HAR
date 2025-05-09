@@ -29,7 +29,10 @@ class ModelFrame(ctk.CTkFrame):
 
         self.result_frame = results_frame
         self.script_dir = os.path.dirname(os.path.abspath(__file__))
-        self.activities = ['waving', 'twist', 'standing', 'squatting', 'rubhand', 'pushpull', 'punching', 'nopeople', 'jump', 'clap']
+        self.activities_front = ['waving', 'twist', 'standing', 'squatting', 'rubhand', 'pushpull', 'punching', 'nopeople', 'jump', 'clap']
+        self.activities_side = ['jump', 'clap', 'pushpull', 'nopeople', 'punching', 'rubhand', 'standing', 'waving', 'twist', 'squatting']
+        self.activities_both = ['jump', 'nopeople', 'twist', 'rubhand', 'clap', 'squatting', 'standing', 'waving', 'pushpull', 'punching']
+
 
         self.tabview = ctk.CTkTabview(self, command=self.on_tab_change)
         self.tabview.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
@@ -199,19 +202,22 @@ class ModelFrame(ctk.CTkFrame):
             ### AND FRONT + SIDE WILL HAVE TO BE INTERLEAVED FIRST ###
             if tab == "Front":
                 tensor = self.toTensor(self.front_data).unsqueeze(0)
+                activities = self.activities_front
                 print("Predicted for front")
                 # print(self.front_data)
             elif tab == "Side":
                 tensor = self.toTensor(self.side_data).unsqueeze(0)
+                activities = self.activities_side
                 print("Predicted for side")
                 # print(self.side_data)
             elif tab == "Both":
                 tensor = self.toTensorInterleave().unsqueeze(0)
+                activities = self.activities_both
                 print("Predicted for both")
                 # print(self.both_data_front)
                 # print(self.both_data_side)
 
-            result = self.run_CNN(tensor)
+            result = self.run_CNN(tensor, activities)
 
             # Update the output frame/pass result to output frame
             self.result_frame.newOutput(result)
@@ -242,7 +248,7 @@ class ModelFrame(ctk.CTkFrame):
 
         return loaded_model
     
-    def run_CNN(self, tensor):
+    def run_CNN(self, tensor, activities):
         """
         Run CNN model to make prediction, then open the output frame, showing the prediction result.
 
@@ -259,11 +265,11 @@ class ModelFrame(ctk.CTkFrame):
             logits = self.model(tensor) # raw logits
         _, output = torch.max(logits, 1) # get index of greatest value
         output_prob = torch.nn.functional.softmax(logits, dim=1) # normalise logits values to add up to 1
-        for index in range(len(self.activities)): # print probability of each activity
-            probs[0][self.activities[index]] = float(output_prob[0][index])
-            print(f"{self.activities[index]}: {output_prob[0][index]}")
-        print(self.activities[output]) # activity with highest probability :D
-        probs[1] = self.activities[output]
+        for index in range(len(activities)): # print probability of each activity
+            probs[0][activities[index]] = float(output_prob[0][index])
+            print(f"{activities[index]}: {output_prob[0][index]}")
+        print(activities[output]) # activity with highest probability :D
+        probs[1] = activities[output]
 
         # Sort outcome based on probabilities and save as dictionary
         sorted_probs = dict(sorted(probs[0].items(), key=lambda item: item[1]))
@@ -339,6 +345,8 @@ class ModelFrame(ctk.CTkFrame):
         image_path = os.path.join(self.script_dir, "output_image.png")
         plt.imsave(image_path, image_np, cmap='gray')
         data = io.read_image(image_path, mode=io.image.ImageReadMode.GRAY).type(torch.float32)
+
+        print("FINISH MERGING/INTERLEAVING 2 DATA")
 
         return data
 
