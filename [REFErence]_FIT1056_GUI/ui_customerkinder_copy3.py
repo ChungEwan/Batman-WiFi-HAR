@@ -219,10 +219,10 @@ class ModelFrame(ctk.CTkFrame):
                 # print(self.both_data_front)
                 # print(self.both_data_side)
 
-            # result = self.run_CNN(tensor, activities)
+            result = self.run_CNN(tensor, activities)
                 # Example data
-            example_data = {"Clap": 60, "Jump": 90, "No People": 45, "Punching": 75, "Rub Hand": 30}
-            self.result_frame.newOutput(example_data)
+            # example_data = {"Clap": 60, "Jump": 90, "No People": 45, "Punching": 75, "Rub Hand": 30}
+            self.result_frame.newOutput(result[0])  # Pass the result to the output frame
 
             # Update the output frame/pass result to output frame
            #self.result_frame.newOutput(example_data)
