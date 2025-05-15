@@ -3,7 +3,7 @@ import customtkinter as ctk
 import os
 import pandas as pd
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageTk
 
 
 import torch
@@ -405,8 +405,8 @@ class ResultsFrame(ctk.CTkFrame):
 
     def display_chart(self, data, bg_color="transparent"):
         """
-        Generate and display a progress chart with a circular plot for the highest value
-        and a horizontal bar graph for the next top 3 values.
+        Generate and display a progress chart with a circular plot for the highest value,
+        display the output image beside it, and a horizontal bar graph below.
         :param data: Dictionary with activity names as keys and values as scores.
         :param bg_color: Background color for the plots (e.g., "transparent", "#FFFFFF").
         """
@@ -417,47 +417,63 @@ class ResultsFrame(ctk.CTkFrame):
         highest = sorted_data[0]
         top_3 = sorted_data[1:4]
 
-        # Create a matplotlib figure
-        fig, axes = plt.subplots(2, 1, figsize=(5, 7), gridspec_kw={'height_ratios': [2, 1]})
-        fig.subplots_adjust(hspace=0.5)
+        # Create a matplotlib figure for the donut chart
+        fig_donut, ax_donut = plt.subplots(figsize=(5, 5))
+        fig_donut.subplots_adjust(hspace=0.5)
 
-        # Set background color for the figure
-        if bg_color == "transparent":
-            fig.patch.set_alpha(0.0)  # Transparent background
-        else:
-            fig.patch.set_facecolor(bg_color)  # Set to specified color
+        # Set transparent background for the donut chart
+        fig_donut.patch.set_alpha(0.0)  # Transparent figure background
+        ax_donut.set_facecolor((0, 0, 0, 0))  # Transparent axes background
 
-        # Set background color for the axes
-        for ax in axes:
-            if bg_color == "transparent":
-                ax.set_facecolor((0, 0, 0, 0))  # Transparent background
-            else:
-                ax.set_facecolor(bg_color)  # Set to specified color
-
-        # Circular plot for the highest value
+        # Donut chart for the highest value
         highest_label, highest_value = highest
         remaining = 100 - highest_value
-        axes[0].pie([highest_value, remaining], labels=[f"{highest_label} ({highest_value:.1f}%)", ""],
+        ax_donut.pie([highest_value, remaining], labels=[f"{highest_label} ({highest_value:.1f}%)", ""],
                     colors=['#71D191', '#EAEAEA'], startangle=90, counterclock=False, wedgeprops={'width': 0.3})
-        axes[0].set_title("Highest Activity", fontsize=14)
+        ax_donut.set_title("Highest Activity Probability", fontsize=14, color="black")
+
+        # Embed the donut chart into the customtkinter frame
+        if self.chart_canvas:
+            self.chart_canvas.get_tk_widget().destroy()  # Remove the old chart if it exists
+        self.chart_canvas = FigureCanvasTkAgg(fig_donut, master=self)
+        self.chart_canvas.draw()
+        self.chart_canvas.get_tk_widget().grid(row=3, column=0, pady=10, sticky="n")
+
+        # Display the output image beside the donut chart
+        image_path = os.path.join(self.script_dir, "output_image.png")
+        if os.path.exists(image_path):
+            img = Image.open(image_path)
+            img = img.resize((200, 300), Image.Resampling.LANCZOS)  # Resize the image
+            img_tk = ImageTk.PhotoImage(img)
+            image_label = ctk.CTkLabel(self, image=img_tk, text="")
+            image_label.image = img_tk  # Keep a reference to avoid garbage collection
+            image_label.grid(row=3, column=1, pady=10, padx=10, sticky="n")
+
+        # Create a matplotlib figure for the horizontal bar graph
+        fig_bar, ax_bar = plt.subplots(figsize=(8, 3))
+        fig_bar.subplots_adjust(hspace=0.5)
+
+        # Set transparent background for the bar graph
+        fig_bar.patch.set_alpha(0.0)  # Transparent figure background
+        ax_bar.set_facecolor((0, 0, 0, 0))  # Transparent axes background
 
         # Horizontal bar graph for the next top 3 values
         if top_3:
             labels = [item[0] for item in top_3][::-1]  # Reverse the order of labels
             values = [item[1] for item in top_3][::-1]  # Reverse the order of values
-            axes[1].barh(labels, values, color=['#ADD8E6', '#FFFFE0', '#DDA0DD'])
-            axes[1].set_xlim(0, 100)
-            axes[1].set_xlabel("Percentage")
-            axes[1].set_title("Top 3 Activities", fontsize=14)
+            ax_bar.barh(labels, values, color=['#ADD8E6', '#FFFFE0', '#DDA0DD'])
+            ax_bar.set_xlim(0, 100)
+            ax_bar.set_xlabel("Percentage", color="black")
+            ax_bar.set_title("The Next Top 3 Activities", fontsize=14, color="black")
+            ax_bar.tick_params(colors="black")
 
-        # Embed the matplotlib figure into the customtkinter frame
-        if self.chart_canvas:
-            self.chart_canvas.get_tk_widget().destroy()  # Remove the old chart if it exists
+        # Embed the bar graph into the customtkinter frame
+        if hasattr(self, 'bar_canvas') and self.bar_canvas:
+            self.bar_canvas.get_tk_widget().destroy()  # Remove the old bar graph if it exists
+        self.bar_canvas = FigureCanvasTkAgg(fig_bar, master=self)
+        self.bar_canvas.draw()
+        self.bar_canvas.get_tk_widget().grid(row=4, column=0, columnspan=2, pady=10, sticky="n")     
 
-        self.chart_canvas = FigureCanvasTkAgg(fig, master=self)
-        self.chart_canvas.draw()
-        self.chart_canvas.get_tk_widget().grid(row=3, column=0, pady=10, sticky="n")
-        
 class CNNModel(nn.Module):
     """
     A class to for the CNN model.
@@ -522,8 +538,8 @@ if __name__ == "__main__":
     root.grid_columnconfigure(0, weight=2)
     root.grid_columnconfigure(1, weight=3)
 
-    results_frame = ResultsFrame(root, fg_color="transparent")
-    model_frame = ModelFrame(root, results_frame, fg_color="transparent")
+    results_frame = ResultsFrame(root)
+    model_frame = ModelFrame(root, results_frame)
     model_frame.grid(row=0, column=0, sticky="nsew", padx=3, pady=10)
     results_frame.grid(row=0, column=1, sticky="nsew", padx=3, pady=10)
 

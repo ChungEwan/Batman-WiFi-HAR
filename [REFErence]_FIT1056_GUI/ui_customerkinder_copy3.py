@@ -219,10 +219,10 @@ class ModelFrame(ctk.CTkFrame):
                 # print(self.both_data_front)
                 # print(self.both_data_side)
 
-            result = self.run_CNN(tensor, activities)
+            # result = self.run_CNN(tensor, activities)
                 # Example data
-            #example_data = {"Clap": 60, "Jump": 90, "No People": 45, "Punching": 75, "Rub Hand": 30}
-            self.result_frame.newOutput(result[0])
+            example_data = {"Clap": 60, "Jump": 90, "No People": 45, "Punching": 75, "Rub Hand": 30}
+            self.result_frame.newOutput(example_data)
 
             # Update the output frame/pass result to output frame
            #self.result_frame.newOutput(example_data)
@@ -414,7 +414,7 @@ class ResultsFrame(ctk.CTkFrame):
 
         # Extract the highest value and the top 3 values
         highest = sorted_data[0]
-        top_3 = sorted_data[:3]  # Top 3
+        top_3 = sorted_data[1:4]  # Top 3
 
         # Create a matplotlib figure
         fig, axes = plt.subplots(2, 1, figsize=(5, 7), gridspec_kw={'height_ratios': [2, 1]})
@@ -427,19 +427,19 @@ class ResultsFrame(ctk.CTkFrame):
             ax.xaxis.label.set_color("white")
             ax.yaxis.label.set_color("white")
             ax.tick_params(colors="white")
-
         # Circular donut for the highest activity only
         highest_label, highest_value = highest
-        axes[0].pie([highest_value],
-                    labels=[f"{highest_label} ({highest_value:.1f}%)"],
-                    colors=['#71D191'],
+        remaining = 100 - highest_value  # Correctly calculate the remaining value
+        axes[0].pie([highest_value, remaining],
+                    labels=[f"{highest_label} ({highest_value:.1f}%)", ""],
+                    colors=['#71D191', '#EAEAEA'],  # Add a color for the remaining portion
                     startangle=90,
-                    counterclock=False,
+                    counterclock=True,
                     wedgeprops={'width': 0.3},
-                    textprops={'color': 'white'})
+                    textprops={'color': 'white'}  # Set label text color to white
+                    )
 
         axes[0].set_title("Highest Activity", fontsize=14, color='white')
-
         # Horizontal bar graph for the top 3 activities
         labels = [item[0] for item in top_3][::-1]
         values = [item[1] for item in top_3][::-1]
