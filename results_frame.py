@@ -5,6 +5,7 @@ from PIL import Image
 
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.ticker import PercentFormatter
 
 class ResultsFrame(ctk.CTkFrame):
     def __init__(self, master, **kwargs):
@@ -17,7 +18,11 @@ class ResultsFrame(ctk.CTkFrame):
         self.output_probs = None
         self.script_dir = os.path.dirname(os.path.abspath(__file__))
         # Placeholder for the chart
-        self.chart_canvas = None
+        self.top_container = None
+        self.chart_widget = None
+        self.bar_widget = None
+        self.image_label = None
+
         self.showing_about = False  # Toggle state
 
         # Frame for original content
@@ -27,7 +32,7 @@ class ResultsFrame(ctk.CTkFrame):
 
         # Frame for ABOUT content
         self.about_frame = ctk.CTkScrollableFrame(self, width=500)
-        self.about_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
+        self.about_frame.grid(row=0, column=0, sticky="nsew", padx=(0,10), pady=10)
         self.about_frame.grid_remove()  # Initially hidden
         self.about_content()
 
@@ -47,7 +52,7 @@ class ResultsFrame(ctk.CTkFrame):
 
         # Results label in the center
         self.label = ctk.CTkLabel(self.main_content_frame, text="Results will be displayed here",font=("Microsoft Yahei UI Light", 26,"bold"))
-        self.label.grid(row=2, column=0, columnspan=2, pady=10, sticky="n")
+        self.label.grid(row=2, column=0, columnspan=2, pady=(10, 2), sticky="n")
 
     def about_content(self):
         """
@@ -118,7 +123,7 @@ class ResultsFrame(ctk.CTkFrame):
         self.output_probs = output
 
         # Update the label with the highest activity
-        self.label.configure(text=f"Predicted Activity: {self.output}")
+        self.label.configure(text=f"Predicted Activity: {self.proper_name(self.output)}")
         self.label.grid(row=1, column=0, pady=0, sticky="s")
 
         # Generate and display the chart
@@ -136,11 +141,10 @@ class ResultsFrame(ctk.CTkFrame):
         sorted_data = sorted(data.items(), key=lambda item: item[1], reverse=True)
         highest = sorted_data[0]
         top_3 = sorted_data[1:4]
-
         
         # create container
         self.top_container = ctk.CTkFrame(self.main_content_frame, fg_color="transparent")
-        self.top_container.grid(row=3, column=0, columnspan=2, pady=5, sticky="n")
+        self.top_container.grid(row=3, column=0, columnspan=2, pady=1, sticky="n")
         self.top_container.grid_columnconfigure(0, weight=1)
         self.top_container.grid_columnconfigure(1, weight=1)
 
@@ -155,24 +159,25 @@ class ResultsFrame(ctk.CTkFrame):
                     colors=['#71D191', '#EAEAEA'],
                     startangle=90,
                     counterclock=True,
-                    wedgeprops={'width': 0.1},
+                    wedgeprops={'width': 0.3},
                     textprops={'color': 'white'})
         # ax_donut.set_title(f"Confidence: {highest_value:.1f}%", fontsize=14, color="white")
-        ax_donut.text(0, 0, f"{highest_value:.1f}%", ha='center', va='center', fontsize=16, color='white')
+        ax_donut.text(0, 0, f"{highest_value:.1f}%", ha='center', va='center', fontsize=16, color='white', fontweight='bold')
 
         # move to left
-        self.chart_canvas = FigureCanvasTkAgg(fig_donut, master=self.top_container)
-        self.chart_canvas.draw()
-        self.chart_canvas.get_tk_widget().grid(row=0, column=1, padx=5, pady=5, sticky="n")
+        chart_canvas = FigureCanvasTkAgg(fig_donut, master=self.top_container)
+        chart_canvas.draw()
+        self.chart_widget = chart_canvas.get_tk_widget()
+        self.chart_widget.grid(row=0, column=1, padx=5, pady=(0, 5), sticky="n")
 
         # Action image to left
         action_image_path = os.path.join(self.script_dir, "Logo", f"{self.output}.png")
         if os.path.exists(action_image_path):
             img = Image.open(action_image_path)
             # Convert to CTkImage
-            ctk_image = ctk.CTkImage(light_image=img, size=(120, 120))
+            ctk_image = ctk.CTkImage(light_image=img, size=(180, 180))
             self.image_label = ctk.CTkLabel(self.top_container, image=ctk_image, text="")
-            self.image_label.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
+            self.image_label.grid(row=0, column=0, padx=6, pady=1, sticky="nsew")
 
         # Bar chart
         fig_bar, ax_bar = plt.subplots(figsize=(7, 2))
@@ -180,19 +185,54 @@ class ResultsFrame(ctk.CTkFrame):
         ax_bar.set_facecolor('#2b2b2b')
         if top_3:
             labels = [item[0] for item in top_3][::-1]
+            # Apply renaming function to each label
+            labels = [self.proper_name(label) for label in labels]
             values = [item[1] for item in top_3][::-1]
             ax_bar.barh(labels, values, color=["#d46954", "#d4c754", "#8ed454"], height=0.3)
             ax_bar.set_xlim(0, top_3[0][1] * 1.2)
             ax_bar.set_xlabel("Percentage", color="white")
-            ax_bar.set_title("Next Top 3 Activities", fontsize=14, color="white")
+            ax_bar.set_title("Next Top 3 Activities", fontsize=14, color="white", fontweight='bold')
             ax_bar.tick_params(colors="white")
+            ax_bar.xaxis.set_major_formatter(PercentFormatter(xmax=100))  # shows % symbol
 
         for spine in ax_bar.spines.values():
             spine.set_visible(False)
 
-        self.bar_canvas = FigureCanvasTkAgg(fig_bar, master=self.main_content_frame)
-        self.bar_canvas.draw()
-        self.bar_canvas.get_tk_widget().grid(row=4, column=0, columnspan=2, pady=5, sticky="n")
+        bar_canvas = FigureCanvasTkAgg(fig_bar, master=self.main_content_frame)
+        bar_canvas.draw()
+        self.bar_widget = bar_canvas.get_tk_widget()
+        self.bar_widget.grid(row=4, column=0, columnspan=2, pady=(0, 40), sticky="n")
 
     def handle_prediction_error(self, tab, error):
-        self.label.configure(text=f"Please insert the compatible CSI data!")
+        # Clear all widgets first
+        for widget in self.main_content_frame.winfo_children():
+            widget.destroy()
+
+        # Reset UI content to original state
+        self.original_content()
+
+        # Update label for error message
+        self.label.configure(text="Please insert the compatible CSI data!")
+
+    def proper_name(self, name):
+        if name == "clap":
+            return "Clap"
+        elif name == "jump":
+            return "Jump"
+        elif name == "rubhand":
+             return "Rubhand"
+        elif name == "nopeople":
+            return "No people"
+        elif name == "squatting":
+            return "Squatting"
+        elif name == "waving":
+            return "Waving"
+        elif name == "pushpull":
+            return "Push & Pull"
+        elif name == "standing":
+            return "Standing"
+        elif name =="punching":
+            return "Punching"
+        elif name == "twist":
+            return "Twist"
+

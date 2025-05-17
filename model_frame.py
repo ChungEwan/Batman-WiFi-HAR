@@ -228,21 +228,20 @@ class ModelFrame(ctk.CTkFrame):
                 tensor = self.toTensor(self.front_data).unsqueeze(0)
                 activities = self.activities_front
                 result = self.run_CNN(tensor, activities, self.model_front)
-                print("Predicted for front")
+                self.result_frame.newOutput(result[0])
             elif tab == "Side":
                 tensor = self.toTensor(self.side_data).unsqueeze(0)
                 activities = self.activities_side
                 result = self.run_CNN(tensor, activities, self.model_side)
-                print("Predicted for side")
+                self.result_frame.newOutput(result[0])
             elif tab == "Both":
                 tensor = self.toTensorInterleave().unsqueeze(0)
                 activities = self.activities_both
                 result = self.run_CNN(tensor, activities, self.model_both)
-                print("Predicted for both")
+                self.result_frame.newOutput(result[0])
             else:
                 raise ValueError(f"Invalid tab: {tab}")
 
-            self.result_frame.newOutput(result[0])
 
         except Exception as e:
             print(f"[ERROR] Prediction failed: {e}")
