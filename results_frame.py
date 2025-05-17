@@ -56,7 +56,7 @@ class ResultsFrame(ctk.CTkFrame):
         self.about_frame.grid_rowconfigure(0, weight=0)  # Title (ABOUT)
         self.about_frame.grid_rowconfigure(1, weight=0)  # Orientation
         self.about_frame.grid_rowconfigure(2, weight=0)  # Image
-        self.about_frame.grid_rowconfigure(3, weight=0)  # Text for oreintation
+        self.about_frame.grid_rowconfigure(3, weight=0)  # Text for orientation
         self.about_frame.grid_rowconfigure(4, weight=0)  # CSI Data Format
         self.about_frame.grid_rowconfigure(5, weight=0)  # Text for data format
         self.about_frame.grid_columnconfigure(0, weight=1)  
@@ -119,6 +119,7 @@ class ResultsFrame(ctk.CTkFrame):
 
         # Update the label with the highest activity
         self.label.configure(text=f"Predicted Activity: {self.output}")
+        self.label.grid(row=1, column=0, pady=0, sticky="s")
 
         # Generate and display the chart
         self.display_chart(self.output_probs)
@@ -145,19 +146,19 @@ class ResultsFrame(ctk.CTkFrame):
 
         # Donut chart
         fig_donut, ax_donut = plt.subplots(figsize=(3, 3))
-        fig_donut.patch.set_facecolor('#2b2b2b')
+        fig_donut.patch.set_facecolor("#2b2b2b")
         ax_donut.set_facecolor('#2b2b2b')
 
         highest_label, highest_value = highest
         remaining = 100 - highest_value
         ax_donut.pie([highest_value, remaining],
-                    labels=[f"{highest_label} ({highest_value:.1f}%)", ""],
                     colors=['#71D191', '#EAEAEA'],
                     startangle=90,
                     counterclock=True,
-                    wedgeprops={'width': 0.3},
+                    wedgeprops={'width': 0.1},
                     textprops={'color': 'white'})
-        ax_donut.set_title("Highest Activity Probability", fontsize=14, color="white")
+        # ax_donut.set_title(f"Confidence: {highest_value:.1f}%", fontsize=14, color="white")
+        ax_donut.text(0, 0, f"{highest_value:.1f}%", ha='center', va='center', fontsize=16, color='white')
 
         # move to left
         self.chart_canvas = FigureCanvasTkAgg(fig_donut, master=self.top_container)
@@ -171,20 +172,23 @@ class ResultsFrame(ctk.CTkFrame):
             # Convert to CTkImage
             ctk_image = ctk.CTkImage(light_image=img, size=(120, 120))
             self.image_label = ctk.CTkLabel(self.top_container, image=ctk_image, text="")
-            self.image_label.grid(row=0, column=0, padx=10, pady=10, sticky="n")
+            self.image_label.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
 
         # Bar chart
-        fig_bar, ax_bar = plt.subplots(figsize=(7, 3))
-        fig_bar.patch.set_facecolor('#2b2b2b')
+        fig_bar, ax_bar = plt.subplots(figsize=(7, 2))
+        fig_bar.patch.set_facecolor("#2b2b2b")
         ax_bar.set_facecolor('#2b2b2b')
         if top_3:
             labels = [item[0] for item in top_3][::-1]
             values = [item[1] for item in top_3][::-1]
-            ax_bar.barh(labels, values, color=['#ADD8E6', '#FFFFE0', '#DDA0DD'])
-            ax_bar.set_xlim(0, 100)
+            ax_bar.barh(labels, values, color=["#d46954", "#d4c754", "#8ed454"], height=0.3)
+            ax_bar.set_xlim(0, top_3[0][1] * 1.2)
             ax_bar.set_xlabel("Percentage", color="white")
-            ax_bar.set_title("The Next Top 3 Activities", fontsize=14, color="white")
+            ax_bar.set_title("Next Top 3 Activities", fontsize=14, color="white")
             ax_bar.tick_params(colors="white")
+
+        for spine in ax_bar.spines.values():
+            spine.set_visible(False)
 
         self.bar_canvas = FigureCanvasTkAgg(fig_bar, master=self.main_content_frame)
         self.bar_canvas.draw()
