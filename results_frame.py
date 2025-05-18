@@ -130,9 +130,10 @@ class ResultsFrame(ctk.CTkFrame):
         self.display_chart(self.output_probs)
 
         # Remove about frame if it is open
-        self.showing_about = False
-        self.about_frame.grid_remove()
-        self.main_content_frame.grid()
+        if self.showing_about:
+            self.showing_about = False
+            self.about_frame.grid_remove()
+            self.main_content_frame.grid()
 
     def display_chart(self, data, bg_color="transparent"):
         """
@@ -207,6 +208,12 @@ class ResultsFrame(ctk.CTkFrame):
         # Clear all widgets first
         for widget in self.main_content_frame.winfo_children():
             widget.destroy()
+
+        # Remove about frame if it is open
+        if self.showing_about:
+            self.showing_about = False
+            self.about_frame.grid_remove()
+            self.main_content_frame.grid()
 
         # Reset UI content to original state
         self.original_content()
